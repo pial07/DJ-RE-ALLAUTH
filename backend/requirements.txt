@@ -1,8 +1,11 @@
 Django
 django-rest-framework
-djoser
+django-allauth
 djangorestframework-simplejwt
 django-cors-headers
+dj-rest-auth
 python-decouple
 pytz
 pyjwt
+requests
+cryptography
