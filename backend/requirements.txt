@@ -1,0 +1,8 @@
+Django
+django-rest-framework
+djoser
+djangorestframework-simplejwt
+django-cors-headers
+python-decouple
+pytz
+pyjwt
