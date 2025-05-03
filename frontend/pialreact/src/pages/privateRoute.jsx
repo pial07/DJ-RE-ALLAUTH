@@ -1,15 +1,20 @@
+// Typical implementation of a PrivateRoute component
+// This is what your implementation likely looks like
+
 import React from "react";
 import { Navigate } from "react-router-dom";
+import { ACCESS_TOKEN } from "../token";
 
 const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem("token");
+  // Check if user is authenticated (token exists)
+  const isAuthenticated = localStorage.getItem(ACCESS_TOKEN) !== null;
 
-  if (!token) {
-    // No token → redirect to login
+  // If not authenticated, redirect to login
+  if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
 
-  // Token exists → show the page
+  // If authenticated, render the protected component
   return children;
 };
 

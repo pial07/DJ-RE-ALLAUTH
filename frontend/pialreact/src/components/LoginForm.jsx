@@ -1,151 +1,184 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
+import api from "../api";
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "../token";
 import google from "../assets/googlecolor.svg";
 import github from "../assets/GitHubMark.png";
-import { useState } from "react";
-import api from "../api";
 
 const LoginForm = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleGoogleLoginSuccess = async (tokenResponse) => {
+    try {
+      console.log("Google token received", tokenResponse);
+
+      // The useGoogleLogin hook provides an access_token, not an ID token
+      const response = await api.post(
+        "/auth/google/",
+        { token: tokenResponse.access_token },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // Important: Skip the authentication token for this request
+          skipAuthRefresh: true,
+          withCredentials: true,
+        }
+      );
+
+      console.log("Google login successful", response.data);
+
+      // Store tokens with proper key names as defined in your token.js constants
+      localStorage.setItem(ACCESS_TOKEN, response.data.access_token);
+      localStorage.setItem(REFRESH_TOKEN, response.data.refresh_token);
+
+      // If you have any authentication state management (like context/redux)
+      // Make sure to update it here
+
+      // Force a browser reload to ensure all auth state is refreshed
+      window.location.href = "/";
+    } catch (error) {
+      console.error(
+        "Google login error",
+        error.response?.data || error.message
+      );
+      alert("Google login failed. Please try again.");
+    }
+  };
+
+  const loginWithGoogle = useGoogleLogin({
+    onSuccess: handleGoogleLoginSuccess,
+    onError: (error) => {
+      console.error("Google login error", error);
+      alert("Google login failed.");
+    },
+    flow: "implicit", // Use implicit flow to get the access token directly
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post("/login/", { email, password });
+      const response = await api.post("login/", { email, password });
+
       console.log("Login successful", response.data);
-      localStorage.setItem("token", response.data.token);
+      localStorage.setItem(ACCESS_TOKEN, response.data.access);
+      localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
+      navigate("/");
     } catch (error) {
       if (error.response) {
         console.error("Server responded with:", error.response.data);
-        alert(JSON.stringify(error.response.data));
+        alert(error.response.data.detail || "Login failed.");
       } else {
-        console.error(error);
+        console.error("Error:", error.message);
         alert("Login failed. Please try again.");
       }
     }
   };
-  return (
-    <div>
-      <section className="bg-gray-50 dark:bg-gray-900">
-        <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-          <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-            <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-              <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
-                Sign in to your account
-              </h1>
-              <form
-                onSubmit={handleSubmit}
-                className="space-y-4 md:space-y-6"
-                action="#"
-              >
-                <div>
-                  <label
-                    for="email"
-                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >
-                    Your email
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    id="email"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    placeholder=""
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required=""
-                  />
-                </div>
-                <div>
-                  <label
-                    for="password"
-                    className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    name="password"
-                    id="password"
-                    placeholder=""
-                    className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    required=""
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-start">
-                    <div className="flex items-center h-5">
-                      <input
-                        id="remember"
-                        aria-describedby="remember"
-                        type="checkbox"
-                        className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                        required=""
-                      />
-                    </div>
-                    <div className="ml-3 text-sm">
-                      <label
-                        for="remember"
-                        className="text-gray-500 dark:text-gray-300"
-                      >
-                        Remember me
-                      </label>
-                    </div>
-                  </div>
-                  <a
-                    href="#"
-                    className="text-sm font-medium text-primary-600 hover:underline dark:text-primary-500"
-                  >
-                    Forgot password?
-                  </a>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full text-blackbg-grey-600 hover:bg-grey-700 focus:ring-4 focus:outline-none focus:ring-grey-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-grey-600 dark:hover:bg-grey-700 dark:focus:ring-grey-800"
-                >
-                  Sign in
-                </button>
-                <p className="text-sm font-light text-gray-500 dark:text-gray-400">
-                  Don’t have an account yet?{" "}
-                  <a
-                    href="#"
-                    className="font-medium text-primary-600 hover:underline dark:text-primary-500"
-                  >
-                    Sign up
-                  </a>
-                </p>
 
-                <button
-                  type="button"
-                  className="flex items-center justify-center w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600"
-                >
-                  <img
-                    src={google}
-                    alt="Google logo"
-                    className="w-5 h-5 mr-2"
-                  />
-                  Login with Google
-                </button>
-                <button
-                  type="button"
-                  className="flex items-center justify-center w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600"
-                >
-                  <img
-                    src={github}
-                    alt="GitHub logo"
-                    className="w-5 h-5 mr-2"
-                  />
-                  Login with GitHub
-                </button>
-              </form>
-            </div>
+  return (
+    <section className="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
+      <div className="w-full max-w-md bg-white rounded-lg shadow dark:bg-gray-800 dark:border-gray-700 p-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+          Sign in to your account
+        </h1>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label
+              htmlFor="email"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Your email
+            </label>
+            <input
+              type="email"
+              id="email"
+              className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-[#2563eb] focus:border-[#2563eb] block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
-        </div>
-      </section>
-    </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-[#2563eb] focus:border-[#2563eb] block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-300">
+              <input
+                type="checkbox"
+                className="w-4 h-4 rounded border-gray-300 bg-gray-50 dark:bg-gray-700 dark:border-gray-600"
+              />
+              <span>Remember me</span>
+            </label>
+            <Link
+              to="/password-reset"
+              className="text-sm font-medium text-[#2563eb] hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full text-white bg-[#2563eb] hover:bg-[#1d4ed8] font-medium rounded-lg text-sm px-5 py-2.5"
+          >
+            Sign in
+          </button>
+
+          <div className="flex items-center my-4">
+            <div className="flex-grow border-t border-gray-300"></div>
+            <span className="mx-4 text-gray-400">or</span>
+            <div className="flex-grow border-t border-gray-300"></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => loginWithGoogle()}
+            className="flex items-center justify-center w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600"
+          >
+            <img src={google} alt="Google logo" className="w-5 h-5 mr-2" />
+            Sign in with Google
+          </button>
+
+          <button
+            type="button"
+            className="flex items-center justify-center w-full border border-gray-300 rounded-lg px-4 py-2 mt-3 bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600"
+          >
+            <img src={github} alt="GitHub logo" className="w-5 h-5 mr-2" />
+            Sign in with GitHub
+          </button>
+
+          <p className="text-sm font-light text-gray-500 dark:text-gray-400 mt-4 text-center">
+            Don't have an account yet?{" "}
+            <Link
+              to="/register"
+              className="font-medium text-[#2563eb] hover:underline"
+            >
+              Sign up
+            </Link>
+          </p>
+        </form>
+      </div>
+    </section>
   );
 };
 

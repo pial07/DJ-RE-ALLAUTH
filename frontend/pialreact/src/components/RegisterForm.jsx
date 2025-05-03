@@ -12,6 +12,7 @@ const RegisterForm = () => {
     terms: false,
   });
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
     const { id, value, type, checked } = e.target;
@@ -32,6 +33,12 @@ const RegisterForm = () => {
       const response = await api.post("/register/", formData);
       if (response.status === 201) {
         console.log("Registration successful", response.data);
+        setMessage(
+          "A confirmation email has been sent to your email address. please check your inbox. and verify to login"
+        );
+        alert(
+          "A confirmation email has been sent to your email address. please check your inbox. and verify to login"
+        );
       } // Handle success response
     } catch (error) {
       if (error.response) {
@@ -165,6 +172,9 @@ const RegisterForm = () => {
         >
           {loading ? "Loading..." : "Register New Account"}
         </button>
+        {message && (
+          <div className="mt-4 text-green-600 text-sm">{message}</div>
+        )}
       </form>
     </div>
   );

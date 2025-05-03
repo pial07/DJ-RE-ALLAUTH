@@ -3,7 +3,7 @@ django-rest-framework
 django-allauth
 djangorestframework-simplejwt
 django-cors-headers
-dj-rest-auth
+dj-rest-auth[with_social]
 python-decouple
 pytz
 pyjwt

@@ -22,4 +22,6 @@ urlpatterns = [
     path('api/', include('users.urls')), # Include the users app URLs
     path('api-auth/', include('rest_framework.urls')),
     path('accounts/', include('allauth.urls')),
+   
 ]
+

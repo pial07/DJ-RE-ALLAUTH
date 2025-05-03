@@ -47,9 +47,42 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     'rest_framework.authtoken',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
     #internal apps
     "users",
 ]
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"  # "none" / "optional" / "mandatory"
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True  # Confirm directly when user clicks the link
+ACCOUNT_LOGIN_METHODS = {'email'}
+# ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'first_name', 'last_name', 'password1*', 'password2*']
+ACCOUNT_EMAIL_CONFIRMATION_ANONYMOUS_REDIRECT_URL = "http://localhost:5173/login"
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = "http://localhost:5173/login"
+ACCOUNT_LOGOUT_REDIRECT_URL = 'http://localhost:5173/login'
+LOGIN_REDIRECT_URL = '/'
+
+# Email config
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST", cast=str, default="smtp.gmail.com")
+EMAIL_PORT = config("EMAIL_PORT", cast=str, default="587") # Recommended
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", cast=str, default=None)
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", cast=str, default=None)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)  # Use EMAIL_PORT 587 for TLS
+EMAIL_USE_SSL = config("EMAIL_USE_SSL", cast=bool, default=False)  # Use MAIL_PORT 465 for SSL
+
+ADMIN_USER_NAME=config("ADMIN_USER_NAME", default="Admin user")
+ADMIN_USER_EMAIL=config("ADMIN_USER_EMAIL", default=None)
+
+MANAGERS=[]
+ADMINS=[]
+if all([ADMIN_USER_NAME, ADMIN_USER_EMAIL]):
+    # 500 errors are emailed to these users
+    ADMINS +=[
+        (f'{ADMIN_USER_NAME}', f'{ADMIN_USER_EMAIL}')
+    ]
+    MANAGERS=ADMINS
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -69,7 +102,7 @@ ROOT_URLCONF = 'pialhome.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -151,7 +184,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",     # if your frontend also runs on Django server
     "http://127.0.0.1:8000",     # just to be safe
 ]
-
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "X-Google-Access-Token",
 ]
@@ -163,7 +198,28 @@ SIMPLE_JWT = {
 }
 
 CORS_ORIGIN_ALLOW_ALL = True #FOR DEV PURPOSE ONLY 
+CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_HTTPONLY = False  # So JavaScript frontend can access the CSRF cookie
+CSRF_COOKIE_SAMESITE = 'Lax'  # or 'None' if cross-origin (localhost:8000 <-> localhost:5173 is usually ok)
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
+SITE_ID = 1
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+    }
+}
+FRONTEND_URL = "http://localhost:5173"  # <-- Your React app URL
+
+ACCOUNT_FORMS = {
+    "reset_password": "users.forms.CustomResetPasswordForm",
+}
