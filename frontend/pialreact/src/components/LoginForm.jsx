@@ -61,18 +61,16 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await api.post("login/", { email, password });
-
+      const response = await api.post("/login/", { email, password });
       console.log("Login successful", response.data);
-      localStorage.setItem(ACCESS_TOKEN, response.data.access);
-      localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
-      navigate("/");
+      localStorage.setItem("token", response.data.token);
+      navigate("/"); // Redirect to home page or dashboard
     } catch (error) {
       if (error.response) {
         console.error("Server responded with:", error.response.data);
-        alert(error.response.data.detail || "Login failed.");
+        alert(JSON.stringify(error.response.data));
       } else {
-        console.error("Error:", error.message);
+        console.error(error);
         alert("Login failed. Please try again.");
       }
     }
